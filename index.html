@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>認証</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+/* ===== このページ（合言葉入力）だけの見た目 ===== */
+
+.lead{
+  text-align:center;
+  font-size:clamp(13px,3.4vw,15px);
+  letter-spacing:.09em;
+  color:rgba(27,43,51,.72);
+  margin-bottom:clamp(22px,4.5vw,30px);
+  animation:fade .9s ease-out .8s both;
+}
+
+.form{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:18px;
+  animation:fade .9s ease-out 1.05s both;
+}
+
+.field{
+  width:100%;
+  max-width:340px;
+}
+
+input[type="text"]{
+  width:100%;
+  font-family:inherit;
+  font-size:20px;
+  letter-spacing:.34em;
+  text-align:center;
+  color:var(--ink);
+  background:transparent;
+  border:0;
+  border-bottom:1.5px solid var(--rule);
+  padding:12px 6px 10px;
+  outline:none;
+  transition:border-color .25s;
+}
+input[type="text"]:focus{ border-bottom-color:#17546B; }
+input[type="text"]::placeholder{
+  letter-spacing:.2em;
+  color:rgba(27,43,51,.28);
+  font-size:15px;
+}
+
+button{
+  font-family:inherit;
+  font-size:15px;
+  letter-spacing:.24em;
+  text-indent:.24em;
+  color:var(--paper);
+  background:#17546B;
+  border:0;
+  border-radius:2px;
+  padding:13px 40px;
+  cursor:pointer;
+  transition:background .25s, transform .15s;
+}
+button:hover{ background:#1D6580; }
+button:active{ transform:translateY(1px); }
+
+.error{
+  min-height:20px;
+  font-size:13px;
+  letter-spacing:.08em;
+  color:#9A4B3A;
+  opacity:0;
+  transition:opacity .2s;
+}
+.error.show{ opacity:1; }
+
+/* まちがえたときに紙が揺れる */
+.shake{ animation:shake .45s ease; }
+@keyframes shake{
+  0%,100%{ transform:translateX(0); }
+  20%{ transform:translateX(-8px); }
+  40%{ transform:translateX(7px); }
+  60%{ transform:translateX(-5px); }
+  80%{ transform:translateX(3px); }
+}
+
+/* ===== 正解したときに出るQRコード ===== */
+.result{ display:none; text-align:center; }
+.result.show{ display:block; animation:lift .9s cubic-bezier(.16,.84,.34,1) both; }
+
+.qr-frame{
+  display:inline-block;
+  background:#fff;
+  padding:16px;
+  border-radius:3px;
+  box-shadow:0 8px 24px rgba(0,0,0,.18);
+}
+.qr-frame svg{
+  display:block;
+  width:210px;          /* QRコードの大きさ【変更ポイント】 */
+  height:210px;
+}
+.qr-frame svg path{ fill:#15303C; }   /* QRコードの色 */
+
+.result .caption{
+  margin-top:20px;
+  font-size:13px;
+  letter-spacing:.1em;
+  color:rgba(27,43,51,.66);
+  line-height:1.9;
+}
+
+.result a{
+  color:#17546B;
+  word-break:break-all;
+  font-size:12px;
+}
+
+.hidden{ display:none !important; }
+</style>
+</head>
+<body>
+  <main class="stage">
+    <article class="paper">
+
+      <h1 id="title">認証</h1>
+
+      <!-- ▼ 合言葉の入力画面 -->
+      <div id="gate">
+        <p class="lead">合言葉を入力してください</p>
+
+        <form class="form" id="form" autocomplete="off">
+          <div class="field">
+            <input type="text" id="input" placeholder="ここに入力"
+                   autocomplete="off" autocapitalize="off" spellcheck="false">
+          </div>
+          <div class="error" id="error">ちがうようだ。もう一度たしかめよう。</div>
+          <button type="submit">解除する</button>
+        </form>
+      </div>
+
+      <!-- ▼ 正解したときに表示されるQRコード -->
+      <div class="result" id="result">
+        <div class="qr-frame"><div id="qr"></div></div>
+        <p class="caption">
+          このコードを読みとれ。<br>
+          <a id="link" href="#" target="_blank" rel="noopener"></a>
+        </p>
+      </div>
+
+    </article>
+  </main>
+
+<!-- QRコードを作るプログラム（同じフォルダの qrcode.js を読み込みます。
+     ネットにつながっていなくてもQRコードは表示されます） -->
+<script src="qrcode.js"></script>
+<script>
+/* ============================================================
+   【設定】ふだん書きかえるのは、この2つだけです
+   ============================================================ */
+
+// 1. 合言葉（パスワード）
+const PASSWORD = "きどう";
+
+// 2. QRコードの読み取り先（真相ページ）
+//    同じフォルダの shinsou.html を指しています。
+//    GitHub Pages で公開すると、自動で
+//    https://ユーザー名.github.io/リポジトリ名/shinsou.html になります。
+//    別のURLにしたい場合だけ、"https://〜" のフルURLに書きかえてください。
+const TRUTH_PAGE = "shinsou.html";
+
+/* ============================================================
+   ここから下は、基本さわらなくて大丈夫です
+   ============================================================ */
+
+const form    = document.getElementById("form");
+const input   = document.getElementById("input");
+const errorEl = document.getElementById("error");
+const gate    = document.getElementById("gate");
+const result  = document.getElementById("result");
+
+// 入力を比べやすい形にそろえる。
+// スペースの有無 / 大文字・小文字 / 全角・半角 / カタカナ・ひらがな のちがいは
+// すべて正解あつかいになります。
+function normalize(v){
+  return String(v)
+    .replace(/[\s　]/g, "")
+    .replace(/[Ａ-Ｚａ-ｚ０-９]/g, function(c){
+      return String.fromCharCode(c.charCodeAt(0) - 0xFEE0);
+    })
+    .replace(/[ァ-ヶ]/g, function(c){
+      return String.fromCharCode(c.charCodeAt(0) - 0x60);
+    })
+    .toLowerCase();
+}
+
+form.addEventListener("submit", function(e){
+  e.preventDefault();
+
+  if (normalize(input.value) === normalize(PASSWORD)) {
+    unlock();
+  } else {
+    errorEl.classList.add("show");
+    const paper = document.querySelector(".paper");
+    paper.classList.remove("shake");
+    void paper.offsetWidth;          // 揺れをやり直すためのおまじない
+    paper.classList.add("shake");
+    input.select();
+  }
+});
+
+// 入力し直したらエラー表示を消す
+input.addEventListener("input", function(){
+  errorEl.classList.remove("show");
+});
+
+function unlock(){
+  gate.classList.add("hidden");
+  result.classList.add("show");
+  document.getElementById("title").textContent = "解除";
+
+  // 相対パスを、QRコードに入れられるフルURLに変換する
+  const url = new URL(TRUTH_PAGE, location.href).href;
+
+  const link = document.getElementById("link");
+  link.href = url;
+  link.textContent = url;
+
+  const box = document.getElementById("qr");
+  if (typeof qrcode === "function") {
+    const qr = qrcode(0, "M");       // 0 = 大きさ自動 / "M" = 誤り訂正レベル
+    qr.addData(url);
+    qr.make();
+    box.innerHTML = qr.createSvgTag({ cellSize:8, margin:4, scalable:true });
+  } else {
+    box.textContent = "QRコードを表示できませんでした。下のリンクから開いてください。";
+  }
+}
+
+window.addEventListener("load", function(){ input.focus(); });
+</script>
+</body>
+</html>

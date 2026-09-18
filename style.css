@@ -1,0 +1,275 @@
+/* ============================================================
+   「真相」ページ  スタイルシート
+   ------------------------------------------------------------
+   よく触る場所は【変更ポイント】と書いてあります。
+   ============================================================ */
+
+
+/* ------------------------------------------------------------
+   1. 色とサイズの設定【変更ポイント】
+   ここの値を変えるだけで、ページ全体の色味が変わります。
+   ------------------------------------------------------------ */
+:root{
+  --navy:      #17546B;   /* 背景の濃い青緑 */
+  --navy-deep: #0F3D4F;   /* 背景のいちばん暗い部分 */
+  --amber:     #EBB966;   /* 背面に重なるオレンジの紙 */
+  --paper:     #F2EAC7;   /* 手前のクリーム色の紙 */
+  --ink:       #1B2B33;   /* 文字の色 */
+  --rule:      rgba(23,84,107,.38);  /* 罫線の色 */
+
+  --lh: 42px;   /* 行の高さ（罫線の間隔と同じ値。ここを変えると罫線も動きます） */
+  --fs: 17px;   /* 本文の文字サイズ */
+}
+
+
+/* ------------------------------------------------------------
+   2. 土台のリセット
+   ------------------------------------------------------------ */
+*{
+  box-sizing:border-box;
+  margin:0;
+  padding:0;
+}
+
+html,body{
+  min-height:100%;
+}
+
+
+/* ------------------------------------------------------------
+   3. 背景（宇宙っぽい深い青緑のグラデーション）
+   ------------------------------------------------------------ */
+body{
+  background:radial-gradient(120% 90% at 50% 8%,
+              #1D6580 0%,
+              var(--navy) 42%,
+              var(--navy-deep) 100%);
+  background-attachment:fixed;
+
+  /* フォント。先に書いたものが優先されます */
+  font-family:"Shippori Mincho","Hiragino Mincho ProN","Yu Mincho",YuMincho,"Noto Serif CJK JP","Noto Serif JP",serif;
+  color:var(--ink);
+
+  /* 紙を画面の中央に置く */
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  padding:clamp(20px,6vw,64px) clamp(16px,5vw,48px);
+  -webkit-font-smoothing:antialiased;
+}
+
+/* 画面のふちを少し暗くして、中央に視線を集める */
+body::after{
+  content:"";
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  background:radial-gradient(130% 100% at 50% 50%,
+              rgba(0,0,0,0) 45%,
+              rgba(0,0,0,.28) 100%);
+}
+
+
+/* ------------------------------------------------------------
+   4. 背面に重なるオレンジの紙 2枚
+   ::before = 左上にずれた紙 / ::after = 右下にずれた紙
+   translate の数字を変えるとズレ幅、rotate は傾きが変わります。【変更ポイント】
+   ------------------------------------------------------------ */
+.stage{
+  position:relative;
+  width:100%;
+  max-width:760px;   /* 紙の最大幅 */
+  animation:rise 1.5s cubic-bezier(.16,.84,.34,1) both;
+}
+
+.stage::before,
+.stage::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  border-radius:2px;
+  z-index:0;
+}
+
+.stage::before{
+  background:var(--amber);
+  transform:rotate(-1.6deg) translate(-10px,-14px);
+  opacity:.92;
+}
+
+.stage::after{
+  background:rgba(235,185,102,.72);
+  transform:rotate(1.9deg) translate(14px,16px);
+}
+
+
+/* ------------------------------------------------------------
+   5. 手前のクリーム色の紙
+   ------------------------------------------------------------ */
+.paper{
+  position:relative;
+  z-index:1;
+  background:linear-gradient(180deg,
+              #F6F0D6 0%,
+              var(--paper) 55%,
+              #EDE3BD 100%);
+  padding:clamp(34px,6.5vw,60px) clamp(24px,6vw,64px) clamp(44px,8vw,72px);
+  border-radius:2px;
+
+  /* 紙の影。浮いているように見せています */
+  box-shadow:0 26px 60px rgba(0,0,0,.34),
+             0 2px 0 rgba(255,255,255,.5) inset;
+}
+
+/* 紙の質感（左上に光、右下に影のにじみ） */
+.paper::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  opacity:.5;
+  background:radial-gradient(60% 40% at 15% 10%, rgba(255,255,255,.55), transparent 70%),
+             radial-gradient(50% 45% at 88% 92%, rgba(140,120,70,.13), transparent 70%);
+}
+
+
+/* ------------------------------------------------------------
+   6. 見出し「真相」
+   ------------------------------------------------------------ */
+h1{
+  position:relative;
+  text-align:center;
+  font-size:clamp(28px,6.4vw,42px);
+  font-weight:700;
+  letter-spacing:.42em;   /* 字間を広げて厳かに */
+  text-indent:.42em;      /* 字間の分だけ右にズレるのを打ち消す */
+  color:#15303C;
+  margin-bottom:clamp(26px,5vw,42px);
+  animation:fade .9s ease-out .5s both;
+}
+
+/* 見出しの下の短い横線 */
+h1::after{
+  content:"";
+  display:block;
+  width:54px;
+  height:1px;
+  margin:clamp(16px,3vw,22px) auto 0;
+  background:var(--rule);
+  transform-origin:center;
+  animation:draw 1.1s cubic-bezier(.4,0,.2,1) .9s both;
+}
+
+
+/* ------------------------------------------------------------
+   7. 本文と罫線
+   罫線は画像ではなく、CSSの繰り返しグラデーションで描いています。
+   --lh（行の高さ）と罫線の間隔を同じ値にすることで、
+   文字が必ず罫線の上に乗るようになっています。
+   ------------------------------------------------------------ */
+.body{
+  position:relative;
+  font-size:var(--fs);
+  line-height:var(--lh);
+  letter-spacing:.055em;
+
+  background-image:repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent calc(var(--lh) - 1px),
+    var(--rule)  calc(var(--lh) - 1px),
+    var(--rule)  var(--lh)
+  );
+}
+
+.body p{
+  text-align:justify;   /* 行の右端をそろえる */
+  animation:lift 1.15s cubic-bezier(.16,.84,.34,1) both;
+}
+
+/* 段落ごとに、順番に浮かび上がる時間差【変更ポイント】
+   段落を増やしたら、この行も増やしてください */
+.body p:nth-of-type(1){ animation-delay:1.15s; }
+.body p:nth-of-type(2){ animation-delay:1.60s; }
+.body p:nth-of-type(3){ animation-delay:2.05s; }
+.body p:nth-of-type(4){ animation-delay:2.50s; }
+
+
+/* ------------------------------------------------------------
+   8. ふりがな（ruby）
+   行の高さを崩さないよう、サイズを px で固定しています
+   ------------------------------------------------------------ */
+ruby{
+  ruby-position:over;
+}
+
+rt{
+  font-size:9px;
+  line-height:1;
+  letter-spacing:.02em;
+  font-weight:500;
+  color:rgba(27,43,51,.62);
+  transform:translateY(2px);
+}
+
+/* 人名を少し強調 */
+.name{
+  font-weight:700;
+  letter-spacing:.09em;
+}
+
+
+/* ------------------------------------------------------------
+   9. アニメーションの動き方
+   ------------------------------------------------------------ */
+
+/* 紙全体が下からふわっと現れる */
+@keyframes rise{
+  from{ opacity:0; transform:translateY(26px) scale(.985); }
+  to  { opacity:1; transform:none; }
+}
+
+/* 見出しがふわっと現れる */
+@keyframes fade{
+  from{ opacity:0; transform:translateY(8px); }
+  to  { opacity:1; transform:none; }
+}
+
+/* 横線が中央から伸びる */
+@keyframes draw{
+  from{ transform:scaleX(0); opacity:0; }
+  to  { transform:scaleX(1); opacity:1; }
+}
+
+/* 本文がぼやけた状態から浮かび上がる */
+@keyframes lift{
+  from{ opacity:0; transform:translateY(10px); filter:blur(2px); }
+  to  { opacity:1; transform:none; filter:none; }
+}
+
+
+/* ------------------------------------------------------------
+   10. スマホ用の調整（画面幅 560px 以下）
+   ------------------------------------------------------------ */
+@media (max-width:560px){
+  :root{
+    --lh:37px;
+    --fs:15.5px;
+  }
+
+  rt{ font-size:8px; }
+
+  /* 重なる紙のズレを小さくする */
+  .stage::before{ transform:rotate(-1.4deg) translate(-7px,-9px); }
+  .stage::after { transform:rotate(1.6deg)  translate(9px,11px); }
+}
+
+
+/* ------------------------------------------------------------
+   11. 「視差効果を減らす」設定の端末ではアニメーションを止める
+   （動きが苦手な人への配慮。消さないことをおすすめします）
+   ------------------------------------------------------------ */
+@media (prefers-reduced-motion:reduce){
+  *{ animation:none !important; }
+}
